@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Espresso">
+<meta name="theme-color" content="#1A1814">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Espresso Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+:root {
+  --bg:#F2F0EB; --card:#FFFFFF; --text-primary:#1A1814; --text-secondary:#8A8580;
+  --accent:#C4793A; --accent-light:#F5EDE3; --border:#E8E4DE;
+  --toggle-bg:#E8E4DE; --toggle-active:#1A1814;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.04);
+  --green:#27AE60; --green-bg:#EAF7EF;
+  --yellow:#E4A000; --yellow-bg:#FEF6E0;
+  --red:#E53935; --red-bg:#FDEAEA;
+}
+html, body { height:100%; overflow:hidden; overscroll-behavior:none; }
+body { font-family:'DM Sans',sans-serif; background:#1A1814; display:flex; justify-content:center; align-items:center; }
+
+/* ── PHONE FRAME ── */
+.phone-frame { width:393px; height:852px; background:var(--bg); border-radius:54px; overflow:hidden; box-shadow:0 0 0 12px #1A1814,0 30px 80px rgba(0,0,0,0.35); position:relative; display:flex; flex-direction:column; }
+.status-bar { display:flex; justify-content:space-between; align-items:center; padding:16px 28px 8px; font-size:13px; font-weight:600; color:var(--text-primary); flex-shrink:0; }
+.status-bar .time { font-size:16px; font-weight:600; }
+.status-icons { display:flex; gap:6px; align-items:center; font-size:12px; }
+.dynamic-island { width:120px; height:34px; background:#1A1814; border-radius:20px; margin:0 auto; flex-shrink:0; }
+
+/* ── SCREENS ── */
+.screen { flex:1; display:none; flex-direction:column; overflow:hidden; min-height:0; }
+.screen.active { display:flex; }
+.top-bar { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:14px 20px 0; flex-shrink:0; }
+.top-bar-left { display:flex; justify-content:flex-start; gap:8px; }
+.top-bar-center { text-align:center; }
+.top-bar-center h1 { font-family:'DM Serif Display',serif; font-size:24px; color:var(--text-primary); line-height:1; font-style:italic; white-space:nowrap; }
+.top-bar-center p { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+.top-bar-right { display:flex; justify-content:flex-end; gap:8px; }
+.nav-btn { background:var(--card); border:none; border-radius:12px; padding:8px 13px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-secondary); cursor:pointer; box-shadow:var(--shadow); white-space:nowrap; }
+.icon-btn { background:var(--card); border:none; border-radius:12px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:var(--shadow); color:var(--text-secondary); flex-shrink:0; }
+
+/* ── SCREEN 1: SHOT LOG ── */
+.app-content { flex:1; display:flex; flex-direction:column; padding:10px 20px 0; gap:8px; overflow:hidden; min-height:0; }
+.save-wrap { padding:12px 20px 20px; flex-shrink:0; }
+.card { background:var(--card); border-radius:20px; padding:13px 16px; box-shadow:var(--shadow); flex-shrink:0; }
+.card-label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:9px; }
+.bean-row { display:flex; align-items:center; justify-content:space-between; }
+.bean-name { font-size:15px; font-weight:500; color:var(--text-primary); }
+.bean-sub { font-size:12px; color:var(--text-secondary); margin-top:1px; }
+.bean-actions { display:flex; gap:10px; align-items:center; }
+.bean-change { font-size:12px; font-weight:500; color:var(--accent); cursor:pointer; background:none; border:none; font-family:'DM Sans',sans-serif; }
+.toggle-group { display:flex; gap:6px; }
+.toggle-btn { flex:1; padding:9px 0; border:none; border-radius:12px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.18s; background:var(--toggle-bg); color:var(--text-secondary); }
+.toggle-btn.active { background:var(--toggle-active); color:#fff; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:8px; flex-shrink:0; }
+.stepper-card { background:var(--card); border-radius:20px; padding:12px 14px; box-shadow:var(--shadow); }
+.stepper-label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; }
+.stepper-label-row { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+.stepper-label-row .stepper-label { margin-bottom:0; }
+.stepper { display:flex; align-items:center; justify-content:space-between; }
+.stepper-btn { width:32px; height:32px; border-radius:10px; border:none; background:var(--accent-light); color:var(--accent); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; user-select:none; -webkit-user-select:none; }
+.stepper-btn:active { transform:scale(0.9); background:var(--accent); color:white; }
+.stepper-value { font-size:22px; font-weight:500; color:var(--text-primary); min-width:56px; text-align:center; }
+.stepper-unit { font-size:12px; color:var(--text-secondary); font-weight:400; }
+.puck-row { display:flex; align-items:center; justify-content:space-between; }
+.puck-title { font-size:14px; font-weight:500; color:var(--text-primary); }
+.puck-sub { font-size:11px; color:var(--text-secondary); margin-top:1px; }
+.ios-toggle { width:48px; height:28px; background:#34C759; border-radius:14px; position:relative; cursor:pointer; transition:background 0.2s; flex-shrink:0; }
+.ios-toggle::after { content:''; position:absolute; width:24px; height:24px; background:white; border-radius:12px; top:2px; left:22px; box-shadow:0 1px 4px rgba(0,0,0,0.2); transition:left 0.2s; }
+.ios-toggle.off { background:var(--toggle-bg); }
+.ios-toggle.off::after { left:2px; }
+.notes-input { width:100%; border:none; background:transparent; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-secondary); resize:none; outline:none; height:24px; }
+.ratio-chip { background:var(--accent-light); color:var(--accent); font-size:11px; font-weight:600; padding:3px 8px; border-radius:6px; letter-spacing:0.03em; white-space:nowrap; }
+.save-btn { background:var(--text-primary); color:white; border:none; border-radius:18px; padding:18px; font-family:'DM Sans',sans-serif; font-size:16px; font-weight:600; cursor:pointer; width:100%; transition:all 0.2s; }
+.save-btn:active { opacity:0.8; }
+
+/* Auto-timer indicator */
+.auto-badge { font-size:9px; font-weight:700; padding:2px 6px; border-radius:5px; letter-spacing:0.04em; }
+.auto-badge.auto { background:var(--accent-light); color:var(--accent); }
+.auto-badge.manual { background:var(--toggle-bg); color:var(--text-secondary); }
+
+/* ── SCREEN 2: VERLAUF ── */
+.verlauf-content { flex:1; display:flex; flex-direction:column; padding:10px 20px 18px; gap:10px; overflow:hidden; min-height:0; }
+.filter-bar { display:flex; gap:7px; align-items:center; flex-shrink:0; }
+.filter-scroll { display:flex; gap:6px; overflow-x:auto; flex:1; scrollbar-width:none; padding-bottom:2px; }
+.filter-scroll::-webkit-scrollbar { display:none; }
+.filter-chip { display:flex; align-items:center; gap:4px; background:var(--card); border:1.5px solid var(--border); border-radius:20px; padding:5px 11px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-secondary); cursor:pointer; white-space:nowrap; transition:all 0.15s; flex-shrink:0; }
+.filter-chip.active { background:var(--toggle-active); border-color:var(--toggle-active); color:white; }
+.filter-btn { width:34px; height:34px; background:var(--card); border:none; border-radius:12px; cursor:pointer; box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center; color:var(--text-secondary); flex-shrink:0; position:relative; }
+.filter-badge { position:absolute; top:-3px; right:-3px; width:14px; height:14px; border-radius:7px; background:var(--accent); color:white; font-size:9px; font-weight:700; display:none; align-items:center; justify-content:center; }
+.filter-badge.show { display:flex; }
+.stats-strip { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; flex-shrink:0; }
+.stat-card { background:var(--card); border-radius:16px; padding:11px 12px; box-shadow:var(--shadow); text-align:center; }
+.stat-value { font-size:20px; font-weight:600; color:var(--text-primary); line-height:1; }
+.stat-label { font-size:10px; color:var(--text-secondary); margin-top:3px; text-transform:uppercase; letter-spacing:0.05em; font-weight:600; }
+.legend { display:flex; gap:10px; align-items:center; flex-shrink:0; flex-wrap:wrap; }
+.legend-item { display:flex; align-items:center; gap:5px; }
+.legend-dot { width:8px; height:8px; border-radius:50%; }
+.legend-dot.green { background:var(--green); } .legend-dot.yellow { background:var(--yellow); } .legend-dot.red { background:var(--red); }
+.legend-text { font-size:10px; color:var(--text-secondary); font-weight:500; }
+.table-wrap { flex:1; overflow-y:auto; background:var(--card); border-radius:20px; box-shadow:var(--shadow); scrollbar-width:none; min-height:0; }
+.table-wrap::-webkit-scrollbar { display:none; }
+table { width:100%; border-collapse:collapse; }
+thead th { font-size:10px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.06em; padding:13px 14px 10px; text-align:left; position:sticky; top:0; background:var(--card); border-bottom:1px solid var(--border); z-index:1; }
+thead th:nth-child(3) { text-align:right; } thead th:last-child { text-align:center; }
+tbody tr { border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.12s; }
+tbody tr:last-child { border-bottom:none; } tbody tr:active { background:var(--bg); }
+tbody td { padding:10px 14px; font-size:13px; color:var(--text-primary); vertical-align:middle; }
+.td-date-day { font-size:13px; font-weight:500; } .td-date-sub { font-size:11px; color:var(--text-secondary); margin-top:1px; }
+.td-bean-name { font-size:13px; font-weight:500; line-height:1.2; } .td-bean-type { font-size:11px; color:var(--text-secondary); margin-top:1px; }
+.td-ratio { text-align:right; font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.td-ampel { text-align:center; }
+.ampel { display:inline-flex; width:26px; height:26px; border-radius:50%; align-items:center; justify-content:center; font-size:10px; font-weight:700; }
+.ampel.green { background:var(--green-bg); color:var(--green); } .ampel.yellow { background:var(--yellow-bg); color:var(--yellow); } .ampel.red { background:var(--red-bg); color:var(--red); }
+
+/* Ampel icon in header */
+.ampel-icon { display:inline-flex; flex-direction:column; gap:1.5px; margin-left:4px; vertical-align:middle; }
+.ampel-icon span { display:block; width:6px; height:6px; border-radius:50%; }
+
+/* ── SCREEN 3: DASHBOARD ── */
+.dash-content { flex:1; overflow-y:auto; padding:10px 20px 24px; scrollbar-width:none; min-height:0; }
+.dash-content::-webkit-scrollbar { display:none; }
+.kpi-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px; }
+.kpi-card { background:var(--card); border-radius:16px; padding:12px 10px; box-shadow:var(--shadow); text-align:center; }
+.kpi-value { font-size:22px; font-weight:700; color:var(--text-primary); line-height:1; }
+.kpi-label { font-size:10px; color:var(--text-secondary); margin-top:3px; text-transform:uppercase; letter-spacing:0.05em; font-weight:600; }
+.kpi-delta { font-size:10px; font-weight:600; margin-top:4px; }
+.kpi-delta.up { color:var(--green); } .kpi-delta.down { color:var(--red); } .kpi-delta.neutral { color:var(--text-secondary); }
+.dash-section { margin-bottom:14px; }
+.dash-section-title { font-family:'DM Serif Display',serif; font-style:italic; font-size:17px; color:var(--text-primary); margin-bottom:10px; }
+.chart-card { background:var(--card); border-radius:20px; padding:16px; box-shadow:var(--shadow); margin-bottom:10px; }
+.chart-title { font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:12px; }
+.insight-card { border-radius:18px; padding:14px 16px; margin-bottom:8px; display:flex; gap:12px; align-items:flex-start; }
+.insight-card.tip { background:var(--accent-light); }
+.insight-card.warn { background:var(--yellow-bg); }
+.insight-card.good { background:var(--green-bg); }
+.insight-icon { font-size:20px; flex-shrink:0; margin-top:1px; }
+.insight-title { font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:3px; }
+.insight-text { font-size:12px; color:var(--text-secondary); line-height:1.5; }
+.chart-svg { width:100%; overflow:visible; }
+.donut-row { display:flex; align-items:center; gap:16px; }
+.donut-legend { display:flex; flex-direction:column; gap:6px; }
+.donut-legend-item { display:flex; align-items:center; gap:7px; }
+.donut-legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.donut-legend-label { font-size:12px; color:var(--text-secondary); }
+.donut-legend-val { font-size:12px; font-weight:600; color:var(--text-primary); margin-left:4px; }
+.bar-bg { fill:var(--bg); }
+.chart-label { font-family:'DM Sans',sans-serif; font-size:9px; fill:var(--text-secondary); }
+.chart-val { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; fill:var(--text-primary); }
+.chart-axis { stroke:var(--border); stroke-width:1; }
+.compare-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.compare-label { font-size:11px; font-weight:500; color:var(--text-secondary); width:64px; flex-shrink:0; text-align:right; }
+.compare-track { flex:1; height:20px; background:var(--bg); border-radius:10px; overflow:hidden; position:relative; }
+.compare-fill { height:100%; border-radius:10px; display:flex; align-items:center; padding-right:8px; justify-content:flex-end; }
+.compare-fill-val { font-size:10px; font-weight:700; color:white; }
+
+/* ── SHEETS ── */
+.sheet-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.32); backdrop-filter:blur(4px); z-index:100; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+.sheet-overlay.open { opacity:1; pointer-events:all; }
+.bottom-sheet { position:absolute; bottom:0; left:0; right:0; background:var(--card); border-radius:28px 28px 0 0; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.32,0.72,0,1); z-index:101; max-height:82%; display:flex; flex-direction:column; }
+.sheet-overlay.open .bottom-sheet { transform:translateY(0); }
+.sheet-handle { width:36px; height:4px; background:var(--border); border-radius:2px; margin:12px auto 0; flex-shrink:0; }
+.sheet-header { display:flex; justify-content:space-between; align-items:center; padding:14px 20px 0; flex-shrink:0; }
+.sheet-title-text { font-family:'DM Serif Display',serif; font-style:italic; font-size:20px; color:var(--text-primary); }
+.sheet-reset { font-size:12px; font-weight:500; color:var(--accent); background:none; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; }
+.sheet-body { overflow-y:auto; padding:14px 20px 36px; flex:1; scrollbar-width:none; }
+.sheet-body::-webkit-scrollbar { display:none; }
+.filter-section { margin-bottom:20px; }
+.filter-section-label { font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:10px; }
+.chip-group { display:flex; flex-wrap:wrap; gap:7px; }
+.opt-chip { padding:7px 14px; background:var(--bg); border:1.5px solid var(--border); border-radius:20px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-secondary); cursor:pointer; transition:all 0.15s; }
+.opt-chip.active { background:var(--toggle-active); border-color:var(--toggle-active); color:white; }
+.opt-chip.green-chip.active { background:var(--green); border-color:var(--green); }
+.opt-chip.yellow-chip.active { background:var(--yellow); border-color:var(--yellow); }
+.opt-chip.red-chip.active { background:var(--red); border-color:var(--red); }
+.apply-btn { width:100%; padding:14px; background:var(--text-primary); color:white; border:none; border-radius:16px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; cursor:pointer; margin-top:4px; }
+
+/* Bean Sheet */
+.bean-sheet-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.32); backdrop-filter:blur(4px); z-index:100; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+.bean-sheet-overlay.open { opacity:1; pointer-events:all; }
+.bean-sheet { position:absolute; bottom:0; left:0; right:0; background:var(--card); border-radius:28px 28px 0 0; padding:0 0 36px; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.32,0.72,0,1); z-index:101; max-height:85%; display:flex; flex-direction:column; }
+.bean-sheet-overlay.open .bean-sheet { transform:translateY(0); }
+.sheet-actions { display:flex; gap:8px; padding:0 20px 14px; }
+.sheet-action-btn { flex:1; padding:12px 0; border-radius:14px; border:none; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; }
+.btn-fill { background:var(--accent); color:white; }
+.btn-new { background:var(--toggle-bg); color:var(--text-secondary); }
+.sheet-divider { height:1px; background:var(--border); margin:0 20px 12px; flex-shrink:0; }
+.sheet-section-label-sm { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.06em; padding:0 20px 10px; flex-shrink:0; }
+.bean-list { padding:0 12px; overflow-y:auto; flex:1; scrollbar-width:none; }
+.bean-list::-webkit-scrollbar { display:none; }
+.bean-item { display:flex; align-items:center; padding:10px 8px; border-radius:14px; cursor:pointer; transition:background 0.15s; gap:12px; }
+.bean-item:active { background:var(--bg); }
+.bean-item.selected { background:var(--accent-light); }
+.bean-dot { width:36px; height:36px; border-radius:10px; background:var(--accent-light); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.bean-item-info { flex:1; min-width:0; }
+.bean-item-name { font-size:14px; font-weight:500; color:var(--text-primary); }
+.bean-item-sub { font-size:12px; color:var(--text-secondary); margin-top:1px; }
+.bean-item-stars { font-size:11px; margin-top:2px; }
+.bean-select-btn { width:32px; height:32px; border-radius:10px; background:var(--accent-light); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--accent); font-size:14px; font-weight:700; flex-shrink:0; }
+.bean-select-btn.selected { background:var(--accent); color:white; }
+
+/* Bean Detail Sheet */
+.bean-detail-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.32); backdrop-filter:blur(4px); z-index:102; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+.bean-detail-overlay.open { opacity:1; pointer-events:all; }
+.bean-detail-sheet { position:absolute; bottom:0; left:0; right:0; background:var(--card); border-radius:28px 28px 0 0; padding:0 0 36px; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.32,0.72,0,1); z-index:103; }
+.bean-detail-overlay.open .bean-detail-sheet { transform:translateY(0); }
+.star-row { display:flex; gap:8px; justify-content:center; margin:8px 0 16px; }
+.star-btn { font-size:28px; cursor:pointer; opacity:0.3; transition:all 0.15s; user-select:none; -webkit-user-select:none; }
+.star-btn.active { opacity:1; }
+
+/* Gram Sheet */
+.gram-sheet-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.32); backdrop-filter:blur(4px); z-index:104; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+.gram-sheet-overlay.open { opacity:1; pointer-events:all; }
+.gram-sheet { position:absolute; bottom:0; left:0; right:0; background:var(--card); border-radius:28px 28px 0 0; padding:0 20px 36px; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.32,0.72,0,1); z-index:105; }
+.gram-sheet-overlay.open .gram-sheet { transform:translateY(0); }
+.gram-options { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:16px 0; }
+.gram-btn { padding:16px 0; background:var(--bg); border:2px solid var(--border); border-radius:16px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; color:var(--text-primary); cursor:pointer; text-align:center; transition:all 0.15s; }
+.gram-btn.active { background:var(--accent-light); border-color:var(--accent); color:var(--accent); }
+
+/* New Bean Form Sheet */
+.new-bean-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.32); backdrop-filter:blur(4px); z-index:104; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+.new-bean-overlay.open { opacity:1; pointer-events:all; }
+.new-bean-sheet { position:absolute; bottom:0; left:0; right:0; background:var(--card); border-radius:28px 28px 0 0; padding:0 20px 36px; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.32,0.72,0,1); z-index:105; }
+.new-bean-overlay.open .new-bean-sheet { transform:translateY(0); }
+.form-field { margin-bottom:14px; }
+.form-label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px; display:block; }
+.form-input { width:100%; padding:12px 14px; background:var(--bg); border:1.5px solid var(--border); border-radius:14px; font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-primary); outline:none; transition:border-color 0.15s; }
+.form-input:focus { border-color:var(--accent); }
+
+/* Settings Sheet */
+.settings-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.32); backdrop-filter:blur(4px); z-index:100; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+.settings-overlay.open { opacity:1; pointer-events:all; }
+.settings-sheet { position:absolute; bottom:0; left:0; right:0; background:var(--card); border-radius:28px 28px 0 0; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.32,0.72,0,1); z-index:101; max-height:90%; display:flex; flex-direction:column; }
+.settings-overlay.open .settings-sheet { transform:translateY(0); }
+.settings-section { margin-bottom:20px; }
+.settings-section-title { font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:12px; }
+.settings-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+.settings-row:last-child { border-bottom:none; }
+.settings-row-label { font-size:14px; font-weight:500; color:var(--text-primary); }
+.settings-row-sub { font-size:12px; color:var(--text-secondary); margin-top:2px; }
+.settings-input { background:var(--bg); border:1.5px solid var(--border); border-radius:10px; padding:6px 10px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-primary); outline:none; width:100px; text-align:center; }
+.settings-stepper { display:flex; align-items:center; gap:8px; }
+.settings-stepper-btn { width:28px; height:28px; border-radius:8px; border:none; background:var(--accent-light); color:var(--accent); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.settings-stepper-val { font-size:14px; font-weight:600; color:var(--text-primary); min-width:36px; text-align:center; }
+
+/* Ampel settings */
+.ampel-settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+.ampel-field { background:var(--bg); border-radius:12px; padding:10px 12px; }
+.ampel-field-label { font-size:10px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+.ampel-field-inputs { display:flex; align-items:center; gap:6px; }
+.ampel-input { width:48px; padding:5px 6px; background:var(--card); border:1.5px solid var(--border); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; text-align:center; color:var(--text-primary); outline:none; }
+.ampel-input:focus { border-color:var(--accent); }
+
+/* Password Screen */
+#screen-password { flex:1; display:none; flex-direction:column; align-items:center; justify-content:center; padding:40px 32px; background:var(--bg); }
+#screen-password.active { display:flex; }
+.pw-logo { font-size:56px; margin-bottom:24px; }
+.pw-title { font-family:'DM Serif Display',serif; font-style:italic; font-size:32px; color:var(--text-primary); margin-bottom:6px; }
+.pw-sub { font-size:13px; color:var(--text-secondary); margin-bottom:32px; }
+.pw-input { width:100%; padding:14px 18px; background:var(--card); border:2px solid var(--border); border-radius:16px; font-family:'DM Sans',sans-serif; font-size:16px; color:var(--text-primary); outline:none; text-align:center; letter-spacing:0.05em; transition:border-color 0.2s; margin-bottom:12px; }
+.pw-input:focus { border-color:var(--accent); }
+.pw-input.error { border-color:var(--red); animation:shake 0.4s ease; }
+.pw-btn { width:100%; padding:16px; background:var(--text-primary); color:white; border:none; border-radius:16px; font-family:'DM Sans',sans-serif; font-size:16px; font-weight:600; cursor:pointer; }
+.pw-error { font-size:12px; color:var(--red); margin-top:8px; min-height:18px; text-align:center; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+
+/* Popup / Alert */
+.popup-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.4); backdrop-filter:blur(6px); z-index:200; display:none; align-items:center; justify-content:center; padding:32px; }
+.popup-overlay.open { display:flex; }
+.popup-card { background:var(--card); border-radius:24px; padding:28px 24px; width:100%; text-align:center; box-shadow:0 8px 40px rgba(0,0,0,0.2); }
+.popup-icon { font-size:40px; margin-bottom:12px; }
+.popup-title { font-family:'DM Serif Display',serif; font-style:italic; font-size:22px; color:var(--text-primary); margin-bottom:8px; }
+.popup-text { font-size:13px; color:var(--text-secondary); line-height:1.5; margin-bottom:20px; }
+.popup-btns { display:flex; gap:10px; }
+.popup-btn { flex:1; padding:13px; border:none; border-radius:14px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; }
+.popup-btn-later { background:var(--bg); color:var(--text-secondary); }
+.popup-btn-done { background:var(--green); color:white; }
+
+/* Empty state */
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:8px; color:var(--text-secondary); }
+.empty-state-icon { font-size:32px; opacity:0.4; }
+.empty-state-text { font-size:13px; font-weight:500; }
+</style>
+</head>
+<body>
+<div class="phone-frame">
+  <div class="status-bar">
+    <span class="time" id="status-time">9:41</span>
+    <div class="dynamic-island"></div>
+    <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+  </div>
+
+  <!-- ══ PASSWORD SCREEN ══ -->
+  <div class="screen active" id="screen-password">
+    <div class="pw-logo">☕</div>
+    <div class="pw-title">Espresso Tracker</div>
+    <div class="pw-sub">Bitte Passwort eingeben</div>
+    <input class="pw-input" type="password" id="pw-input" placeholder="Passwort" autocomplete="current-password">
+    <button class="pw-btn" id="pw-btn">Entsperren</button>
+    <div class="pw-error" id="pw-error"></div>
+  </div>
+
+  <!-- ══ SCREEN 1: SHOT LOG ══ -->
+  <div class="screen" id="screen-log">
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <button class="icon-btn" id="settings-btn" title="Einstellungen">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+      <div class="top-bar-center"><h1>Shot Log</h1><p id="current-date">Di, 17. Feb · 09:41</p></div>
+      <div class="top-bar-right"><button class="nav-btn" id="to-verlauf-btn">Verlauf →</button></div>
+    </div>
+    <div class="app-content">
+      <!-- Bohne -->
+      <div class="card">
+        <div class="card-label">Bohne</div>
+        <div class="bean-row">
+          <div><div class="bean-name" id="selected-bean-name">Gardelli — Specialty</div><div class="bean-sub" id="selected-bean-sub">Ethiopia Guji · Hell geröstet</div></div>
+          <div class="bean-actions">
+            <button class="bean-change" id="open-sheet-btn">Ändern</button>
+          </div>
+        </div>
+      </div>
+      <!-- Bezug + Siebträger -->
+      <div class="two-col">
+        <div class="card"><div class="card-label">Bezug</div><div class="toggle-group" id="bezug-toggle"><button class="toggle-btn">Single</button><button class="toggle-btn active">Double</button></div></div>
+        <div class="card"><div class="card-label">Siebträger</div><div class="toggle-group" id="sieb-toggle"><button class="toggle-btn">Normal</button><button class="toggle-btn active">Bodenlos</button></div></div>
+      </div>
+      <!-- Dosis + Durchlauf -->
+      <div class="two-col">
+        <div class="stepper-card">
+          <div class="stepper-label">Dosis</div>
+          <div class="stepper" id="dosis-stepper" data-value="18" data-step="0.5" data-unit="g" data-dec="1">
+            <button class="stepper-btn">−</button>
+            <span class="stepper-value">18<span class="stepper-unit">g</span></span>
+            <button class="stepper-btn">+</button>
+          </div>
+        </div>
+        <div class="stepper-card">
+          <div class="stepper-label-row">
+            <span class="stepper-label">Durchlauf</span>
+            <span class="auto-badge manual" id="timer-mode-badge">MANUELL</span>
+          </div>
+          <div class="stepper" id="durchlauf-stepper" data-value="28" data-step="1" data-unit="s" data-dec="0">
+            <button class="stepper-btn">−</button>
+            <span class="stepper-value">28<span class="stepper-unit">s</span></span>
+            <button class="stepper-btn">+</button>
+          </div>
+        </div>
+      </div>
+      <!-- Espresso -->
+      <div class="stepper-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div class="stepper-label" style="margin-bottom:0">Espresso</div>
+          <span class="ratio-chip" id="ratio-chip">1 : 2.0 Ratio</span>
+        </div>
+        <div class="stepper" id="espresso-stepper" data-value="36" data-step="0.5" data-unit="g" data-dec="1">
+          <button class="stepper-btn">−</button>
+          <span class="stepper-value">36<span class="stepper-unit">g</span></span>
+          <button class="stepper-btn">+</button>
+        </div>
+      </div>
+      <!-- Puck Screen -->
+      <div class="card">
+        <div class="puck-row">
+          <div><div class="puck-title">Puck Screen</div><div class="puck-sub" id="puck-sub">Verwendet</div></div>
+          <div class="ios-toggle" id="puck-toggle"></div>
+        </div>
+      </div>
+      <!-- Notiz -->
+      <div class="card"><div class="card-label">Notiz</div><textarea class="notes-input" id="notes-input" placeholder="Frucht, Säure, Süße … (optional)"></textarea></div>
+    </div>
+    <!-- Save Button außerhalb des scroll-bereichs, mit Abstand zum Home Indicator -->
+    <div class="save-wrap">
+      <button class="save-btn" id="save-btn">Shot speichern</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 2: VERLAUF ══ -->
+  <div class="screen" id="screen-verlauf">
+    <div class="top-bar">
+      <div class="top-bar-left"><button class="nav-btn" id="back-from-verlauf">← Zurück</button></div>
+      <div class="top-bar-center"><h1>Verlauf</h1><p id="verlauf-sub">0 Shots</p></div>
+      <div class="top-bar-right">
+        <button class="filter-btn" id="open-filter-verlauf-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+          <div class="filter-badge" id="filter-badge-verlauf">0</div>
+        </button>
+        <button class="nav-btn" id="to-dashboard-btn">Dashboard →</button>
+      </div>
+    </div>
+    <div class="verlauf-content">
+      <div class="filter-bar">
+        <div class="filter-scroll" id="active-filter-chips"><span style="font-size:12px;color:var(--text-secondary);align-self:center;white-space:nowrap;">Alle Shots</span></div>
+      </div>
+      <div class="stats-strip">
+        <div class="stat-card"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Shots</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-avg-ratio">–</div><div class="stat-label">Ø Ratio</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-green-pct">–</div><div class="stat-label">🟢 Quote</div></div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot green"></div><span class="legend-text">Ratio 1:1.8–2.8 + Zeit 20–30s</span></div>
+        <div class="legend-item"><div class="legend-dot yellow"></div><span class="legend-text">Grenzbereich</span></div>
+        <div class="legend-item"><div class="legend-dot red"></div><span class="legend-text">Außerhalb</span></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Datum</th>
+              <th>Bohne</th>
+              <th style="text-align:right">Ratio</th>
+              <th style="text-align:center">
+                <span style="display:inline-flex;align-items:center;gap:3px;">
+                  ⬤
+                  <span class="ampel-icon">
+                    <span style="background:var(--red);display:block;width:6px;height:6px;border-radius:50%"></span>
+                    <span style="background:var(--yellow);display:block;width:6px;height:6px;border-radius:50%"></span>
+                    <span style="background:var(--green);display:block;width:6px;height:6px;border-radius:50%"></span>
+                  </span>
+                </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="shot-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 3: DASHBOARD ══ -->
+  <div class="screen" id="screen-dashboard">
+    <div class="top-bar">
+      <div class="top-bar-left"><button class="nav-btn" id="back-from-dashboard">← Zurück</button></div>
+      <div class="top-bar-center"><h1>Dashboard</h1><p id="dash-sub">Feb 2026</p></div>
+      <div class="top-bar-right">
+        <button class="filter-btn" id="open-filter-dash-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+          <div class="filter-badge" id="filter-badge-dash">0</div>
+        </button>
+      </div>
+    </div>
+    <div class="dash-content" id="dash-content"></div>
+  </div>
+
+  <!-- ══ FILTER SHEET (shared) ══ -->
+  <div class="sheet-overlay" id="filter-overlay">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header"><span class="sheet-title-text">Filtern</span><button class="sheet-reset" id="reset-filters-btn">Zurücksetzen</button></div>
+      <div class="sheet-body">
+        <div class="filter-section"><div class="filter-section-label">Zeitraum</div><div class="chip-group" id="time-filter-group">
+          <div class="opt-chip" data-filter="time" data-val="today">Heute</div>
+          <div class="opt-chip" data-filter="time" data-val="week">Diese Woche</div>
+          <div class="opt-chip" data-filter="time" data-val="kw">KW <span id="kw-label"></span></div>
+          <div class="opt-chip" data-filter="time" data-val="month">Dieser Monat</div>
+          <div class="opt-chip" data-filter="time" data-val="q1">Q1</div>
+          <div class="opt-chip" data-filter="time" data-val="q2">Q2</div>
+          <div class="opt-chip" data-filter="time" data-val="q3">Q3</div>
+          <div class="opt-chip" data-filter="time" data-val="q4">Q4</div>
+          <div class="opt-chip" data-filter="time" data-val="year">Dieses Jahr</div>
+        </div></div>
+        <div class="filter-section"><div class="filter-section-label">Wertung</div><div class="chip-group">
+          <div class="opt-chip green-chip" data-filter="ampel" data-val="green">🟢 Grün</div>
+          <div class="opt-chip yellow-chip" data-filter="ampel" data-val="yellow">🟡 Gelb</div>
+          <div class="opt-chip red-chip" data-filter="ampel" data-val="red">🔴 Rot</div>
+        </div></div>
+        <div class="filter-section"><div class="filter-section-label">Bezug</div><div class="chip-group">
+          <div class="opt-chip" data-filter="type" data-val="Single">Single</div>
+          <div class="opt-chip" data-filter="type" data-val="Double">Double</div>
+        </div></div>
+        <div class="filter-section"><div class="filter-section-label">Siebträger</div><div class="chip-group">
+          <div class="opt-chip" data-filter="basket" data-val="Normal">Normal</div>
+          <div class="opt-chip" data-filter="basket" data-val="Bodenlos">Bodenlos</div>
+        </div></div>
+        <div class="filter-section"><div class="filter-section-label">Bohne</div><div class="chip-group" id="bean-filter-group"></div></div>
+        <div class="filter-section"><div class="filter-section-label">Puck Screen</div><div class="chip-group">
+          <div class="opt-chip" data-filter="puck" data-val="true">Verwendet</div>
+          <div class="opt-chip" data-filter="puck" data-val="false">Nicht verwendet</div>
+        </div></div>
+        <button class="apply-btn" id="apply-filter-btn">Anwenden</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BEAN SHEET ══ -->
+  <div class="bean-sheet-overlay" id="bean-sheet-overlay">
+    <div class="bean-sheet">
+      <div class="sheet-handle"></div>
+      <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:20px;color:var(--text-primary);padding:14px 20px 14px;flex-shrink:0;">Bohne wählen</div>
+      <div class="sheet-actions">
+        <button class="sheet-action-btn btn-fill" id="btn-fill-bean">☕ Bohne auffüllen</button>
+        <button class="sheet-action-btn btn-new" id="btn-new-bean">＋ Neue Bohne</button>
+      </div>
+      <div class="sheet-divider"></div>
+      <div class="sheet-section-label-sm">Zuletzt verwendet</div>
+      <div class="bean-list" id="bean-list"></div>
+    </div>
+  </div>
+
+  <!-- ══ BEAN DETAIL SHEET ══ -->
+  <div class="bean-detail-overlay" id="bean-detail-overlay">
+    <div class="bean-detail-sheet">
+      <div class="sheet-handle"></div>
+      <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:20px;color:var(--text-primary);padding:14px 20px 6px;" id="bean-detail-title">Bohne</div>
+      <div style="padding:0 20px 20px;">
+        <div class="filter-section-label" style="margin-bottom:8px;">Bewertung</div>
+        <div class="star-row" id="star-row">
+          <span class="star-btn" data-star="1">★</span>
+          <span class="star-btn" data-star="2">★</span>
+          <span class="star-btn" data-star="3">★</span>
+          <span class="star-btn" data-star="4">★</span>
+          <span class="star-btn" data-star="5">★</span>
+        </div>
+        <button class="apply-btn" id="save-star-btn" style="background:var(--accent);margin-bottom:10px;">Bewertung speichern</button>
+        <button class="apply-btn" id="delete-bean-btn" style="background:var(--red-bg);color:var(--red);">🗑 Bohne löschen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ GRAM SHEET (Auffüllen / Neue Bohne Schritt 2) ══ -->
+  <div class="gram-sheet-overlay" id="gram-sheet-overlay">
+    <div class="gram-sheet">
+      <div class="sheet-handle"></div>
+      <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:20px;color:var(--text-primary);padding:14px 0 4px;" id="gram-sheet-title">Menge eingefüllt</div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;" id="gram-sheet-sub">Wie viel Gramm kamen in die Mühle?</div>
+      <div class="gram-options">
+        <button class="gram-btn" data-gram="250">250g</button>
+        <button class="gram-btn" data-gram="500">500g</button>
+        <button class="gram-btn" data-gram="1000">1 kg</button>
+      </div>
+      <button class="apply-btn" id="confirm-gram-btn">Bestätigen</button>
+    </div>
+  </div>
+
+  <!-- ══ NEW BEAN SHEET ══ -->
+  <div class="new-bean-overlay" id="new-bean-overlay">
+    <div class="new-bean-sheet">
+      <div class="sheet-handle"></div>
+      <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:20px;color:var(--text-primary);padding:14px 0 16px;">Neue Bohne</div>
+      <div class="form-field">
+        <label class="form-label">Name / Rösterei</label>
+        <input class="form-input" id="new-bean-name" type="text" placeholder="z.B. Gardelli">
+      </div>
+      <div class="form-field">
+        <label class="form-label">Details</label>
+        <input class="form-input" id="new-bean-sub" type="text" placeholder="z.B. Ethiopia Guji · Hell">
+      </div>
+      <div class="form-field">
+        <label class="form-label">Emoji</label>
+        <input class="form-input" id="new-bean-emoji" type="text" placeholder="🫘" maxlength="2" style="text-align:center;font-size:20px;">
+      </div>
+      <button class="apply-btn" id="confirm-new-bean-btn" style="background:var(--accent);">Weiter → Menge wählen</button>
+    </div>
+  </div>
+
+  <!-- ══ SETTINGS SHEET ══ -->
+  <div class="settings-overlay" id="settings-overlay">
+    <div class="settings-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header"><span class="sheet-title-text">Einstellungen</span></div>
+      <div class="sheet-body">
+
+        <!-- Maschine -->
+        <div class="settings-section">
+          <div class="settings-section-title">Maschine</div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Maschinenname</div><div class="settings-row-sub">Deine Espressomaschine</div></div>
+            <input class="settings-input" id="setting-machine" type="text" placeholder="z.B. Gaggia">
+          </div>
+        </div>
+
+        <!-- Timer -->
+        <div class="settings-section">
+          <div class="settings-section-title">Auto-Timer</div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Dezibel-Timer</div><div class="settings-row-sub">Mikrofon startet/stoppt Durchlaufzeit</div></div>
+            <div class="ios-toggle off" id="setting-autotimer"></div>
+          </div>
+        </div>
+
+        <!-- Reinigung -->
+        <div class="settings-section">
+          <div class="settings-section-title">Reinigungserinnerung</div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Erinnerung aktiv</div></div>
+            <div class="ios-toggle off" id="setting-cleaning-active"></div>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Alle x Bezüge</div><div class="settings-row-sub" id="cleaning-counter-sub">Noch nicht konfiguriert</div></div>
+            <div class="settings-stepper">
+              <button class="settings-stepper-btn" id="cleaning-minus">−</button>
+              <span class="settings-stepper-val" id="cleaning-val">20</span>
+              <button class="settings-stepper-btn" id="cleaning-plus">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Standard-Werte -->
+        <div class="settings-section">
+          <div class="settings-section-title">Standard-Werte (Shot Log)</div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Dosis</div></div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input class="settings-input" id="setting-default-dosis" type="number" step="0.5" min="1" max="30" value="18" style="width:64px;">
+              <span style="font-size:12px;color:var(--text-secondary)">g</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Durchlaufzeit</div></div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input class="settings-input" id="setting-default-zeit" type="number" step="1" min="1" max="60" value="28" style="width:64px;">
+              <span style="font-size:12px;color:var(--text-secondary)">s</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Espresso</div></div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input class="settings-input" id="setting-default-espresso" type="number" step="0.5" min="1" max="60" value="36" style="width:64px;">
+              <span style="font-size:12px;color:var(--text-secondary)" id="setting-unit-label">g</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ampel-Grenzen -->
+        <div class="settings-section">
+          <div class="settings-section-title">Ampel-Grenzen</div>
+          <div class="ampel-settings-grid">
+            <div class="ampel-field">
+              <div class="ampel-field-label" style="color:var(--green)">🟢 Ratio</div>
+              <div class="ampel-field-inputs">
+                <input class="ampel-input" id="amp-ratio-g-min" value="1.8">
+                <span style="font-size:11px;color:var(--text-secondary)">–</span>
+                <input class="ampel-input" id="amp-ratio-g-max" value="2.8">
+              </div>
+            </div>
+            <div class="ampel-field">
+              <div class="ampel-field-label" style="color:var(--green)">🟢 Zeit (s)</div>
+              <div class="ampel-field-inputs">
+                <input class="ampel-input" id="amp-zeit-g-min" value="20">
+                <span style="font-size:11px;color:var(--text-secondary)">–</span>
+                <input class="ampel-input" id="amp-zeit-g-max" value="30">
+              </div>
+            </div>
+            <div class="ampel-field">
+              <div class="ampel-field-label" style="color:var(--yellow)">🟡 Ratio</div>
+              <div class="ampel-field-inputs">
+                <input class="ampel-input" id="amp-ratio-y-min" value="1.4">
+                <span style="font-size:11px;color:var(--text-secondary)">–</span>
+                <input class="ampel-input" id="amp-ratio-y-max" value="3.0">
+              </div>
+            </div>
+            <div class="ampel-field">
+              <div class="ampel-field-label" style="color:var(--yellow)">🟡 Zeit (s)</div>
+              <div class="ampel-field-inputs">
+                <input class="ampel-input" id="amp-zeit-y-min" value="18">
+                <span style="font-size:11px;color:var(--text-secondary)">–</span>
+                <input class="ampel-input" id="amp-zeit-y-max" value="35">
+              </div>
+            </div>
+          </div>
+          <button class="apply-btn" id="save-ampel-btn" style="margin-top:12px;background:var(--accent);">Grenzen speichern</button>
+        </div>
+
+        <!-- Einheit -->
+        <div class="settings-section">
+          <div class="settings-section-title">Einheit</div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Gewicht</div></div>
+            <div class="toggle-group" style="gap:6px;">
+              <button class="toggle-btn active" id="unit-g-btn" style="padding:6px 14px;font-size:12px;">g</button>
+              <button class="toggle-btn" id="unit-ml-btn" style="padding:6px 14px;font-size:12px;">ml</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export -->
+        <div class="settings-section">
+          <div class="settings-section-title">Daten</div>
+          <button class="apply-btn" id="export-csv-btn" style="background:var(--toggle-active);">📥 Daten als CSV exportieren</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CLEANING POPUP ══ -->
+  <div class="popup-overlay" id="cleaning-popup">
+    <div class="popup-card">
+      <div class="popup-icon">🧹</div>
+      <div class="popup-title">Reinigung fällig!</div>
+      <div class="popup-text" id="cleaning-popup-text">Du hast 20 Bezüge gemacht. Zeit die Maschine zu reinigen!</div>
+      <div class="popup-btns">
+        <button class="popup-btn popup-btn-later" id="cleaning-later-btn">Jetzt nicht</button>
+        <button class="popup-btn popup-btn-done" id="cleaning-done-btn">✓ Gereinigt</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /phone-frame -->
+
+<script>
+// ══════════════════════════════════════════════
+// PASSWORD
+// ══════════════════════════════════════════════
+const PW_HASH = '386be7b039782f54062ce0827b14c23a13abae3248bf6e71dbfbeb5b5b103d94';
+const AUTH_KEY = 'espresso_auth_v1';
+
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkPassword() {
+  const val = document.getElementById('pw-input').value;
+  const hash = await sha256(val);
+  if (hash === PW_HASH) {
+    localStorage.setItem(AUTH_KEY, '1');
+    showScreen('screen-log');
+    initApp();
+  } else {
+    const inp = document.getElementById('pw-input');
+    inp.classList.add('error');
+    document.getElementById('pw-error').textContent = 'Falsches Passwort';
+    setTimeout(() => inp.classList.remove('error'), 500);
+  }
+}
+
+document.getElementById('pw-btn').addEventListener('click', checkPassword);
+document.getElementById('pw-input').addEventListener('keydown', e => { if(e.key==='Enter') checkPassword(); });
+
+// Check auth on load
+if (localStorage.getItem(AUTH_KEY) === '1') {
+  showScreen('screen-log');
+  initApp();
+}
+
+// ══════════════════════════════════════════════
+// DATA STORE (localStorage)
+// ══════════════════════════════════════════════
+function loadData(key, def) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; }
+}
+function saveData(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+}
+
+let beans = loadData('espresso_beans', [
+  {id:1, name:"Gardelli", sub:"Ethiopia Guji · Hell", emoji:"🫘", stars:0, totalGrams:0},
+  {id:2, name:"The Barn", sub:"Colombia · Mittel", emoji:"☕", stars:0, totalGrams:0},
+  {id:3, name:"Five Elephant", sub:"Kenya · Hell", emoji:"🌿", stars:0, totalGrams:0},
+  {id:4, name:"Bonanza", sub:"Guatemala · Naturell", emoji:"🟤", stars:0, totalGrams:0}
+]);
+
+let shots = loadData('espresso_shots', []);
+// Parse dates back from JSON
+shots = shots.map(s => ({...s, date: new Date(s.date)}));
+
+let settings = loadData('espresso_settings', {
+  machine: '',
+  autoTimer: false,
+  cleaningActive: false,
+  cleaningEvery: 20,
+  cleaningCounter: 0,
+  defaultDosis: 18,
+  defaultZeit: 28,
+  defaultEspresso: 36,
+  unit: 'g',
+  ampel: {
+    ratioGMin: 1.8, ratioGMax: 2.8,
+    zeitGMin: 20, zeitGMax: 30,
+    ratioYMin: 1.4, ratioYMax: 3.0,
+    zeitYMin: 18, zeitYMax: 35
+  }
+});
+
+function persistBeans() { saveData('espresso_beans', beans); }
+function persistShots() { saveData('espresso_shots', shots); }
+function persistSettings() { saveData('espresso_settings', settings); }
+
+// ══════════════════════════════════════════════
+// AMPEL LOGIC (uses settings)
+// ══════════════════════════════════════════════
+function getAmpel(r, z) {
+  const a = settings.ampel;
+  let ratioScore = 'red';
+  if (r >= a.ratioGMin && r <= a.ratioGMax) ratioScore = 'green';
+  else if (r >= a.ratioYMin && r <= a.ratioYMax) ratioScore = 'yellow';
+
+  let zeitScore = 'red';
+  if (z >= a.zeitGMin && z <= a.zeitGMax) zeitScore = 'green';
+  else if (z >= a.zeitYMin && z <= a.zeitYMax) zeitScore = 'yellow';
+
+  if (ratioScore === 'red' || zeitScore === 'red') return 'red';
+  if (ratioScore === 'yellow' || zeitScore === 'yellow') return 'yellow';
+  return 'green';
+}
+
+// ══════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════
+const DAYS = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+const MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+function fmtDate(d) { return `${DAYS[d.getDay()]}, ${d.getDate()}. ${MONTHS[d.getMonth()]}`; }
+function fmtTime(d) { return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0'); }
+function getKW(d) { const j=new Date(d.getFullYear(),0,1); return Math.ceil(((d-j)/86400000+j.getDay()+1)/7); }
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+// FILTERS (global)
+// ══════════════════════════════════════════════
+let activeFilters = {};
+
+function matchesFilters(s) {
+  const now = new Date();
+  if (activeFilters.time) {
+    const v = activeFilters.time;
+    if (v==='today' && s.date.toDateString()!==now.toDateString()) return false;
+    if (v==='week' && ((now-s.date)/86400000<0||(now-s.date)/86400000>7)) return false;
+    if (v==='kw' && getKW(s.date)!==getKW(now)) return false;
+    if (v==='month' && (s.date.getMonth()!==now.getMonth()||s.date.getFullYear()!==now.getFullYear())) return false;
+    if (v==='year' && s.date.getFullYear()!==now.getFullYear()) return false;
+    if (v==='q1' && s.date.getMonth()>2) return false;
+    if (v==='q2' && (s.date.getMonth()<3||s.date.getMonth()>5)) return false;
+    if (v==='q3' && (s.date.getMonth()<6||s.date.getMonth()>8)) return false;
+    if (v==='q4' && s.date.getMonth()<9) return false;
+  }
+  if (activeFilters.ampel && getAmpel(s.ratio, s.zeit||27) !== activeFilters.ampel) return false;
+  if (activeFilters.type && s.type !== activeFilters.type) return false;
+  if (activeFilters.basket && s.basket !== activeFilters.basket) return false;
+  if (activeFilters.bean && s.bean !== activeFilters.bean) return false;
+  if (activeFilters.puck !== undefined && s.puck !== activeFilters.puck) return false;
+  return true;
+}
+
+function updateFilterBadges() {
+  const cnt = Object.keys(activeFilters).length;
+  ['verlauf','dash'].forEach(id => {
+    const badge = document.getElementById(`filter-badge-${id}`);
+    if (badge) { badge.textContent = cnt; badge.classList.toggle('show', cnt > 0); }
+  });
+}
+
+function buildBeanFilterChips() {
+  const group = document.getElementById('bean-filter-group');
+  group.innerHTML = beans.map(b => `<div class="opt-chip" data-filter="bean" data-val="${b.name}">${b.emoji} ${b.name}</div>`).join('');
+  bindFilterChips();
+}
+
+function bindFilterChips() {
+  document.querySelectorAll('.opt-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const group = chip.dataset.filter;
+      document.querySelectorAll(`.opt-chip[data-filter="${group}"]`).forEach(c => c.classList.remove('active'));
+      chip.classList.toggle('active');
+    });
+  });
+}
+
+function openFilterSheet() {
+  buildBeanFilterChips();
+  document.querySelectorAll('.opt-chip').forEach(c => {
+    const val = activeFilters[c.dataset.filter];
+    c.classList.toggle('active', val !== undefined && String(val) === c.dataset.val);
+  });
+  document.getElementById('filter-overlay').classList.add('open');
+}
+
+document.getElementById('open-filter-verlauf-btn').addEventListener('click', openFilterSheet);
+document.getElementById('open-filter-dash-btn').addEventListener('click', openFilterSheet);
+
+document.getElementById('filter-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('filter-overlay')) document.getElementById('filter-overlay').classList.remove('open');
+});
+
+document.getElementById('reset-filters-btn').addEventListener('click', () => {
+  document.querySelectorAll('.opt-chip').forEach(c => c.classList.remove('active'));
+  activeFilters = {};
+  updateFilterBadges();
+});
+
+document.getElementById('apply-filter-btn').addEventListener('click', () => {
+  activeFilters = {};
+  document.querySelectorAll('.opt-chip.active').forEach(c => {
+    const k = c.dataset.filter;
+    let v = c.dataset.val;
+    if (k === 'puck') v = v === 'true';
+    activeFilters[k] = v;
+  });
+  document.getElementById('filter-overlay').classList.remove('open');
+  renderVerlauf();
+  buildDashboard();
+  updateFilterBadges();
+});
+
+// ══════════════════════════════════════════════
+// VERLAUF
+// ══════════════════════════════════════════════
+function renderVerlauf() {
+  const filtered = shots.filter(matchesFilters);
+  const tbody = document.getElementById('shot-table-body');
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-state-icon">☕</div><div class="empty-state-text">Keine Shots gefunden</div></div></td></tr>`;
+    document.getElementById('stat-total').textContent = '0';
+    document.getElementById('stat-avg-ratio').textContent = '–';
+    document.getElementById('stat-green-pct').textContent = '–';
+    document.getElementById('verlauf-sub').textContent = '0 Shots';
+    return;
+  }
+  tbody.innerHTML = filtered.map(s => {
+    const cls = getAmpel(s.ratio, s.zeit||27);
+    return `<tr>
+      <td><div class="td-date-day">${fmtDate(s.date)}</div><div class="td-date-sub">${fmtTime(s.date)}</div></td>
+      <td><div class="td-bean-name">${s.bean}</div><div class="td-bean-type">${s.type} · ${s.beanSub||''}</div></td>
+      <td class="td-ratio">1 : ${s.ratio.toFixed(2)}</td>
+      <td class="td-ampel"><span class="ampel ${cls}">●</span></td>
+    </tr>`;
+  }).join('');
+  const total = filtered.length;
+  const avg = filtered.reduce((a,s) => a+s.ratio, 0) / total;
+  const greenCt = filtered.filter(s => getAmpel(s.ratio, s.zeit||27) === 'green').length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-avg-ratio').textContent = '1:' + avg.toFixed(1);
+  document.getElementById('stat-green-pct').textContent = Math.round(greenCt/total*100) + '%';
+  document.getElementById('verlauf-sub').textContent = `${total} Shot${total!==1?'s':''}`;
+
+  // Active filter chips
+  const bar = document.getElementById('active-filter-chips');
+  const labels = {
+    time:{today:'Heute',week:'Diese Woche',kw:'Akt. KW',month:'Dieser Monat',q1:'Q1',q2:'Q2',q3:'Q3',q4:'Q4',year:'Dieses Jahr'},
+    ampel:{green:'🟢 Grün',yellow:'🟡 Gelb',red:'🔴 Rot'},
+    type:v=>v, basket:v=>v, bean:v=>v,
+    puck:{true:'Puck ✓',false:'Puck ✗'}
+  };
+  const chips = Object.entries(activeFilters).map(([k,v]) => {
+    const lbl = typeof labels[k]==='function' ? labels[k](v) : (labels[k]?.[v]||v);
+    return `<span class="filter-chip active" data-remove="${k}">${lbl} ✕</span>`;
+  });
+  bar.innerHTML = chips.length > 0 ? chips.join('') : '<span style="font-size:12px;color:var(--text-secondary);align-self:center;white-space:nowrap;">Alle Shots</span>';
+  bar.querySelectorAll('.filter-chip[data-remove]').forEach(c => {
+    c.addEventListener('click', () => {
+      delete activeFilters[c.dataset.remove];
+      renderVerlauf();
+      buildDashboard();
+      updateFilterBadges();
+    });
+  });
+  updateFilterBadges();
+}
+
+// ══════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════
+function buildDashboard() {
+  const el = document.getElementById('dash-content');
+  const filtered = shots.filter(matchesFilters);
+  el.innerHTML = '';
+
+  if (filtered.length === 0) {
+    el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:40px 20px;">
+      <div style="font-size:48px;opacity:0.3;">☕</div>
+      <div style="font-size:18px;font-weight:600;color:var(--text-primary);text-align:center;">Noch keine Shots vorhanden</div>
+      <div style="font-size:13px;color:var(--text-secondary);text-align:center;max-width:280px;">Starte mit dem Loggen deines ersten Espresso Shots.</div>
+      <button onclick="showScreen('screen-log')" style="margin-top:12px;background:var(--text-primary);color:white;border:none;border-radius:16px;padding:14px 24px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Zum Shot Log →</button>
+    </div>`;
+    return;
+  }
+
+  const total = filtered.length;
+  const avgRatio = filtered.reduce((a,s) => a+s.ratio, 0) / total;
+  const green = filtered.filter(s => getAmpel(s.ratio, s.zeit||27) === 'green').length;
+
+  // KPIs
+  el.innerHTML += `<div class="kpi-row">
+    <div class="kpi-card"><div class="kpi-value">${total}</div><div class="kpi-label">Shots</div><div class="kpi-delta neutral">gesamt</div></div>
+    <div class="kpi-card"><div class="kpi-value">${Math.round(green/total*100)}%</div><div class="kpi-label">🟢 Quote</div><div class="kpi-delta up"></div></div>
+    <div class="kpi-card"><div class="kpi-value">1:${avgRatio.toFixed(1)}</div><div class="kpi-label">Ø Ratio</div><div class="kpi-delta neutral">stabil</div></div>
+  </div>`;
+
+  // Insights
+  const insights = generateInsights(filtered);
+  if (insights.length > 0) {
+    el.innerHTML += `<div class="dash-section"><div class="dash-section-title">Insights</div>${insights.map(i => `
+    <div class="insight-card ${i.type}"><div class="insight-icon">${i.icon}</div>
+    <div><div class="insight-title">${i.title}</div><div class="insight-text">${i.text}</div></div></div>`).join('')}</div>`;
+  }
+
+  // Donut
+  const gCnt = filtered.filter(s => getAmpel(s.ratio,s.zeit||27)==='green').length;
+  const yCnt = filtered.filter(s => getAmpel(s.ratio,s.zeit||27)==='yellow').length;
+  const rCnt = filtered.filter(s => getAmpel(s.ratio,s.zeit||27)==='red').length;
+  const donutR=44,cx=56,cy=56,circ=2*Math.PI*donutR;
+  const gPct=gCnt/total,yPct=yCnt/total,rPct=rCnt/total;
+  const gDash=gPct*circ,yDash=yPct*circ,rDash=rPct*circ;
+
+  el.innerHTML += `<div class="dash-section"><div class="dash-section-title">Qualität & Ratio</div>
+  <div class="chart-card">
+    <div class="chart-title">Ampel-Verteilung</div>
+    <div class="donut-row">
+      <svg width="112" height="112" viewBox="0 0 112 112">
+        <circle cx="${cx}" cy="${cy}" r="${donutR}" fill="none" stroke="var(--bg)" stroke-width="16"/>
+        <circle cx="${cx}" cy="${cy}" r="${donutR}" fill="none" stroke="var(--green)" stroke-width="16" stroke-dasharray="${gDash} ${circ-gDash}" stroke-dashoffset="0" transform="rotate(-90 ${cx} ${cy})"/>
+        <circle cx="${cx}" cy="${cy}" r="${donutR}" fill="none" stroke="var(--yellow)" stroke-width="16" stroke-dasharray="${yDash} ${circ-yDash}" stroke-dashoffset="${-gDash}" transform="rotate(-90 ${cx} ${cy})"/>
+        <circle cx="${cx}" cy="${cy}" r="${donutR}" fill="none" stroke="var(--red)" stroke-width="16" stroke-dasharray="${rDash} ${circ-rDash}" stroke-dashoffset="${-(gDash+yDash)}" transform="rotate(-90 ${cx} ${cy})"/>
+        <text x="${cx}" y="${cy-6}" text-anchor="middle" font-family="DM Sans" font-size="18" font-weight="700" fill="var(--text-primary)">${Math.round(gPct*100)}%</text>
+        <text x="${cx}" y="${cy+10}" text-anchor="middle" font-family="DM Sans" font-size="10" fill="var(--text-secondary)">grün</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="donut-legend-item"><div class="donut-legend-dot" style="background:var(--green)"></div><span class="donut-legend-label">Grün</span><span class="donut-legend-val">${gCnt} (${Math.round(gPct*100)}%)</span></div>
+        <div class="donut-legend-item"><div class="donut-legend-dot" style="background:var(--yellow)"></div><span class="donut-legend-label">Gelb</span><span class="donut-legend-val">${yCnt} (${Math.round(yPct*100)}%)</span></div>
+        <div class="donut-legend-item"><div class="donut-legend-dot" style="background:var(--red)"></div><span class="donut-legend-label">Rot</span><span class="donut-legend-val">${rCnt} (${Math.round(rPct*100)}%)</span></div>
+      </div>
+    </div>
+  </div></div>`;
+
+  // Bohnen-Analyse
+  const beanNames = [...new Set(filtered.map(s => s.bean))];
+  const beanStats = beanNames.map(name => {
+    const bs = filtered.filter(s => s.bean === name);
+    const avgR = bs.reduce((a,s) => a+s.ratio, 0) / bs.length;
+    const greenQ = Math.round(bs.filter(s => getAmpel(s.ratio,s.zeit||27)==='green').length / bs.length * 100);
+    const beanObj = beans.find(b => b.name === name);
+    const totalGrams = beanObj ? beanObj.totalGrams : 0;
+    return {name, cnt:bs.length, avgR, greenQ, totalGrams};
+  });
+
+  el.innerHTML += `<div class="dash-section"><div class="dash-section-title">Bohnen-Analyse</div>
+  <div class="chart-card">
+    <div class="chart-title">🟢 Quote pro Bohne</div>
+    ${beanStats.map(b => `<div class="compare-row">
+      <div class="compare-label" style="font-size:10px">${b.name}</div>
+      <div class="compare-track"><div class="compare-fill" style="width:${Math.max(b.greenQ,5)}%;background:var(--accent)"><span class="compare-fill-val">${b.greenQ}%</span></div></div>
+      <div style="font-size:10px;color:var(--text-secondary);width:28px">${b.cnt}×</div>
+    </div>`).join('')}
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Verbrauch pro Bohne (eingefüllt)</div>
+    ${beanStats.map(b => {
+      const kg = b.totalGrams >= 1000 ? (b.totalGrams/1000).toFixed(1)+'kg' : b.totalGrams+'g';
+      const pct = Math.min(Math.round((b.totalGrams/2000)*100), 100);
+      return `<div class="compare-row">
+        <div class="compare-label" style="font-size:10px">${b.name}</div>
+        <div class="compare-track"><div class="compare-fill" style="width:${Math.max(pct,5)}%;background:var(--accent-light)"><span style="font-size:10px;font-weight:700;color:var(--accent)">${kg}</span></div></div>
+      </div>`;
+    }).join('')}
+  </div></div>`;
+
+  // Zeitliche Muster
+  const byDay = [0,0,0,0,0,0,0];
+  filtered.forEach(s => byDay[s.date.getDay()]++);
+  const maxDay = Math.max(...byDay, 1);
+  const dayLabels = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+  const barW=30, barH=60, barGap=12;
+
+  el.innerHTML += `<div class="dash-section"><div class="dash-section-title">Zeitliche Muster</div>
+  <div class="chart-card">
+    <div class="chart-title">Shots nach Wochentag</div>
+    <svg class="chart-svg" height="${barH+30}" viewBox="0 0 ${7*(barW+barGap)-barGap} ${barH+30}">
+      ${byDay.map((cnt,i) => {
+        const h = cnt>0 ? (cnt/maxDay)*barH : 2;
+        const x = i*(barW+barGap);
+        const y = barH-h;
+        const col = i===0||i===6 ? 'var(--accent-light)' : 'var(--accent)';
+        return `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="6" fill="${col}"/>
+        <text x="${x+barW/2}" y="${barH+12}" text-anchor="middle" class="chart-label">${dayLabels[i]}</text>
+        ${cnt>0?`<text x="${x+barW/2}" y="${y-4}" text-anchor="middle" class="chart-val">${cnt}</text>`:''}`;
+      }).join('')}
+    </svg>
+  </div></div>`;
+
+  // Equipment
+  const withPuck = filtered.filter(s => s.puck);
+  const withoutPuck = filtered.filter(s => !s.puck);
+  if (withPuck.length > 0 || withoutPuck.length > 0) {
+    const puckGreen = withPuck.length>0 ? Math.round(withPuck.filter(s=>getAmpel(s.ratio,s.zeit||27)==='green').length/withPuck.length*100) : 0;
+    const noPuckGreen = withoutPuck.length>0 ? Math.round(withoutPuck.filter(s=>getAmpel(s.ratio,s.zeit||27)==='green').length/withoutPuck.length*100) : 0;
+    el.innerHTML += `<div class="dash-section"><div class="dash-section-title">Equipment</div>
+    <div class="chart-card">
+      <div class="chart-title">Puck Screen Einfluss</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:var(--green-bg);border-radius:14px;padding:12px;text-align:center;">
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-bottom:6px;">Mit Puck Screen</div>
+          <div style="font-size:28px;font-weight:700;color:var(--green)">${puckGreen}%</div>
+          <div style="font-size:10px;color:var(--text-secondary);margin-top:2px">${withPuck.length} Shots</div>
+        </div>
+        <div style="background:var(--bg);border-radius:14px;padding:12px;text-align:center;">
+          <div style="font-size:11px;color:var(--text-secondary);font-weight:600;margin-bottom:6px;">Ohne Puck Screen</div>
+          <div style="font-size:28px;font-weight:700;color:var(--text-primary)">${noPuckGreen}%</div>
+          <div style="font-size:10px;color:var(--text-secondary);margin-top:2px">${withoutPuck.length} Shots</div>
+        </div>
+      </div>
+    </div></div>`;
+  }
+}
+
+function generateInsights(filtered) {
+  if (!filtered || filtered.length === 0) return [];
+  const insights = [];
+  const beanNames = [...new Set(filtered.map(s => s.bean))];
+
+  beanNames.forEach(name => {
+    const bs = filtered.filter(s => s.bean === name);
+    if (bs.length < 2) return;
+    const redShots = bs.filter(s => getAmpel(s.ratio,s.zeit||27)==='red');
+    const avgZ = bs.reduce((a,s) => a+(s.zeit||27), 0) / bs.length;
+    if (redShots.length >= 2) {
+      const avgR = bs.reduce((a,s) => a+s.ratio, 0) / bs.length;
+      const dir = avgR < settings.ampel.ratioGMin ? 'zu kurz' : 'zu lang';
+      insights.push({type:'warn',icon:'⚠️',title:`${name}: Shots oft außerhalb`,text:`${redShots.length} von ${bs.length} Shots rot. Ø Ratio 1:${avgR.toFixed(1)} – Bezug ${dir}.`});
+    }
+    if (avgZ < settings.ampel.zeitGMin && bs.length >= 2) {
+      insights.push({type:'tip',icon:'🔧',title:`${name}: Durchlauf zu kurz`,text:`Ø ${avgZ.toFixed(0)}s – Mahlgrad feiner stellen.`});
+    }
+    if (avgZ > settings.ampel.zeitGMax && bs.length >= 2) {
+      insights.push({type:'tip',icon:'🔧',title:`${name}: Durchlauf zu lang`,text:`Ø ${avgZ.toFixed(0)}s – Mahlgrad grober stellen.`});
+    }
+  });
+
+  if (filtered.length >= 6) {
+    const recent = filtered.slice(0,5);
+    const older = filtered.slice(5);
+    const recentG = recent.filter(s=>getAmpel(s.ratio,s.zeit||27)==='green').length/recent.length;
+    const olderG = older.filter(s=>getAmpel(s.ratio,s.zeit||27)==='green').length/older.length;
+    const diff = Math.round((recentG-olderG)*100);
+    if (diff >= 10) insights.push({type:'good',icon:'📈',title:'Du wirst besser!',text:`Letzte 5 Shots: ${Math.round(recentG*100)}% grün – ${diff}% mehr als davor.`});
+    if (diff <= -10) insights.push({type:'warn',icon:'📉',title:'Qualität zuletzt gesunken',text:`Letzte 5 Shots nur ${Math.round(recentG*100)}% grün – ${Math.abs(diff)}% weniger als davor.`});
+  }
+
+  return insights.slice(0, 4);
+}
+
+// ══════════════════════════════════════════════
+// TOGGLES (Shot Log)
+// ══════════════════════════════════════════════
+document.querySelectorAll('.toggle-group').forEach(group => {
+  group.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+});
+
+// ══════════════════════════════════════════════
+// PUCK TOGGLE
+// ══════════════════════════════════════════════
+document.getElementById('puck-toggle').addEventListener('click', function() {
+  this.classList.toggle('off');
+  document.getElementById('puck-sub').textContent = this.classList.contains('off') ? 'Nicht verwendet' : 'Verwendet';
+});
+
+// ══════════════════════════════════════════════
+// RATIO UPDATE
+// ══════════════════════════════════════════════
+function updateRatio() {
+  const d = parseFloat(document.querySelector('#dosis-stepper .stepper-value').textContent);
+  const e = parseFloat(document.querySelector('#espresso-stepper .stepper-value').textContent);
+  const unit = settings.unit;
+  if (d > 0) document.getElementById('ratio-chip').textContent = '1 : ' + (e/d).toFixed(1) + ' Ratio';
+}
+
+// ══════════════════════════════════════════════
+// STEPPERS (no zoom, no scroll)
+// ══════════════════════════════════════════════
+document.querySelectorAll('.stepper').forEach(s => {
+  let val = parseFloat(s.dataset.value);
+  const step = parseFloat(s.dataset.step), unit = s.dataset.unit, dec = parseInt(s.dataset.dec);
+  const el = s.querySelector('.stepper-value');
+  const render = () => {
+    el.innerHTML = (dec > 0 ? val.toFixed(dec) : val) + `<span class="stepper-unit">${unit}</span>`;
+    updateRatio();
+  };
+  const minusBtn = s.querySelector('.stepper-btn:first-child');
+  const plusBtn = s.querySelector('.stepper-btn:last-child');
+
+  // Use touchstart/touchend to prevent scroll/zoom
+  function handleMinus(e) { e.preventDefault(); e.stopPropagation(); val = parseFloat(Math.max(0, val-step).toFixed(dec)); render(); }
+  function handlePlus(e) { e.preventDefault(); e.stopPropagation(); val = parseFloat((val+step).toFixed(dec)); render(); }
+
+  minusBtn.addEventListener('touchstart', handleMinus, {passive:false});
+  minusBtn.addEventListener('click', handleMinus);
+  plusBtn.addEventListener('touchstart', handlePlus, {passive:false});
+  plusBtn.addEventListener('click', handlePlus);
+});
+
+// ══════════════════════════════════════════════
+// SAVE SHOT
+// ══════════════════════════════════════════════
+document.getElementById('save-btn').addEventListener('click', () => {
+  const d = parseFloat(document.querySelector('#dosis-stepper .stepper-value').textContent);
+  const e = parseFloat(document.querySelector('#espresso-stepper .stepper-value').textContent);
+  const z = parseFloat(document.querySelector('#durchlauf-stepper .stepper-value').textContent);
+  const ratio = d > 0 ? e / d : 0;
+  const shotType = document.querySelector('#bezug-toggle .toggle-btn.active')?.textContent || 'Double';
+  const basket = document.querySelector('#sieb-toggle .toggle-btn.active')?.textContent || 'Bodenlos';
+  const puck = !document.getElementById('puck-toggle').classList.contains('off');
+  const note = document.getElementById('notes-input').value;
+
+  shots.unshift({
+    date: new Date(),
+    bean: document.getElementById('selected-bean-name').textContent,
+    beanSub: document.getElementById('selected-bean-sub').textContent,
+    type: shotType.trim(),
+    basket: basket.trim(),
+    puck, dosis: d, espresso: e,
+    ratio: parseFloat(ratio.toFixed(2)),
+    zeit: z, note
+  });
+  persistShots();
+
+  // Cleaning check
+  if (settings.cleaningActive) {
+    settings.cleaningCounter = (settings.cleaningCounter || 0) + 1;
+    persistSettings();
+    if (settings.cleaningCounter >= settings.cleaningEvery) {
+      showCleaningPopup();
+    }
+  }
+
+  const btn = document.getElementById('save-btn');
+  btn.textContent = '✓ Gespeichert';
+  btn.style.background = 'var(--green)';
+  setTimeout(() => { btn.textContent = 'Shot speichern'; btn.style.background = ''; }, 1500);
+});
+
+// ══════════════════════════════════════════════
+// CLEANING POPUP
+// ══════════════════════════════════════════════
+function showCleaningPopup() {
+  document.getElementById('cleaning-popup-text').textContent =
+    `Du hast ${settings.cleaningCounter} Bezüge gemacht. Zeit die Maschine zu reinigen!`;
+  document.getElementById('cleaning-popup').classList.add('open');
+}
+
+document.getElementById('cleaning-later-btn').addEventListener('click', () => {
+  document.getElementById('cleaning-popup').classList.remove('open');
+});
+
+document.getElementById('cleaning-done-btn').addEventListener('click', () => {
+  settings.cleaningCounter = 0;
+  persistSettings();
+  document.getElementById('cleaning-popup').classList.remove('open');
+});
+
+// ══════════════════════════════════════════════
+// BEAN SHEET
+// ══════════════════════════════════════════════
+let selectedBeanId = loadData('espresso_selected_bean', 1);
+let pendingDetailBeanId = null;
+let pendingGramMode = null; // 'fill' or 'new'
+let pendingNewBean = null;
+
+function renderBeans() {
+  const list = document.getElementById('bean-list');
+  list.innerHTML = beans.map(b => {
+    const stars = b.stars > 0 ? '★'.repeat(b.stars) + '☆'.repeat(5-b.stars) : '☆☆☆☆☆';
+    return `<div class="bean-item ${b.id === selectedBeanId ? 'selected' : ''}" data-id="${b.id}">
+      <div class="bean-dot">${b.emoji}</div>
+      <div class="bean-item-info">
+        <div class="bean-item-name">${b.name}</div>
+        <div class="bean-item-sub">${b.sub}</div>
+        <div class="bean-item-stars" style="color:var(--accent)">${stars}</div>
+      </div>
+      <button class="bean-select-btn ${b.id === selectedBeanId ? 'selected' : ''}" data-select="${b.id}" title="Auswählen">✓</button>
+    </div>`;
+  }).join('');
+
+  // Click on name area → detail sheet
+  list.querySelectorAll('.bean-item').forEach(item => {
+    item.addEventListener('click', e => {
+      if (e.target.closest('.bean-select-btn')) return;
+      pendingDetailBeanId = parseInt(item.dataset.id);
+      openBeanDetail(pendingDetailBeanId);
+    });
+  });
+
+  // Click on select button → select bean
+  list.querySelectorAll('.bean-select-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      selectedBeanId = parseInt(btn.dataset.select);
+      saveData('espresso_selected_bean', selectedBeanId);
+      const b = beans.find(x => x.id === selectedBeanId);
+      document.getElementById('selected-bean-name').textContent = b.name;
+      document.getElementById('selected-bean-sub').textContent = b.sub;
+      closeBeanSheet();
+    });
+  });
+}
+
+const beanOverlay = document.getElementById('bean-sheet-overlay');
+function openBeanSheet() { renderBeans(); beanOverlay.classList.add('open'); }
+function closeBeanSheet() { beanOverlay.classList.remove('open'); }
+document.getElementById('open-sheet-btn').addEventListener('click', openBeanSheet);
+beanOverlay.addEventListener('click', e => { if (e.target === beanOverlay) closeBeanSheet(); });
+
+// Bohne auffüllen
+document.getElementById('btn-fill-bean').addEventListener('click', () => {
+  pendingGramMode = 'fill';
+  // Need to pick a bean first — show list for selection context
+  // Open gram sheet for selected bean
+  document.getElementById('gram-sheet-title').textContent = 'Bohne auffüllen';
+  document.getElementById('gram-sheet-sub').textContent = `Wie viel Gramm kamen in die Mühle?`;
+  document.querySelectorAll('.gram-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('gram-sheet-overlay').classList.add('open');
+});
+
+// Neue Bohne
+document.getElementById('btn-new-bean').addEventListener('click', () => {
+  document.getElementById('new-bean-name').value = '';
+  document.getElementById('new-bean-sub').value = '';
+  document.getElementById('new-bean-emoji').value = '🫘';
+  document.getElementById('new-bean-overlay').classList.add('open');
+});
+
+// New bean confirm → go to gram sheet
+document.getElementById('confirm-new-bean-btn').addEventListener('click', () => {
+  const name = document.getElementById('new-bean-name').value.trim();
+  if (!name) return;
+  pendingNewBean = {
+    name,
+    sub: document.getElementById('new-bean-sub').value.trim() || 'Unbekannte Herkunft',
+    emoji: document.getElementById('new-bean-emoji').value.trim() || '🫘'
+  };
+  pendingGramMode = 'new';
+  document.getElementById('new-bean-overlay').classList.remove('open');
+  document.getElementById('gram-sheet-title').textContent = 'Neue Bohne';
+  document.getElementById('gram-sheet-sub').textContent = 'Wie viel Gramm kamen in die Mühle?';
+  document.querySelectorAll('.gram-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('gram-sheet-overlay').classList.add('open');
+});
+
+// Gram buttons
+document.querySelectorAll('.gram-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.gram-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// Confirm gram
+document.getElementById('confirm-gram-btn').addEventListener('click', () => {
+  const activeGram = document.querySelector('.gram-btn.active');
+  if (!activeGram) return;
+  const grams = parseInt(activeGram.dataset.gram);
+
+  if (pendingGramMode === 'new' && pendingNewBean) {
+    const newId = Date.now();
+    beans.push({id:newId, name:pendingNewBean.name, sub:pendingNewBean.sub, emoji:pendingNewBean.emoji, stars:0, totalGrams:grams});
+    persistBeans();
+    pendingNewBean = null;
+  } else if (pendingGramMode === 'fill') {
+    const bean = beans.find(b => b.id === selectedBeanId);
+    if (bean) { bean.totalGrams = (bean.totalGrams||0) + grams; persistBeans(); }
+  }
+
+  document.getElementById('gram-sheet-overlay').classList.remove('open');
+  closeBeanSheet();
+  renderBeans();
+});
+
+// Close gram sheet
+document.getElementById('gram-sheet-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('gram-sheet-overlay')) document.getElementById('gram-sheet-overlay').classList.remove('open');
+});
+
+// Close new bean sheet
+document.getElementById('new-bean-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('new-bean-overlay')) document.getElementById('new-bean-overlay').classList.remove('open');
+});
+
+// ══════════════════════════════════════════════
+// BEAN DETAIL
+// ══════════════════════════════════════════════
+function openBeanDetail(beanId) {
+  const bean = beans.find(b => b.id === beanId);
+  if (!bean) return;
+  document.getElementById('bean-detail-title').textContent = bean.name;
+  // Stars
+  document.querySelectorAll('.star-btn').forEach(s => {
+    const n = parseInt(s.dataset.star);
+    s.classList.toggle('active', n <= (bean.stars||0));
+  });
+  document.getElementById('bean-detail-overlay').classList.add('open');
+}
+
+// Star selection
+document.querySelectorAll('.star-btn').forEach(star => {
+  star.addEventListener('click', () => {
+    const n = parseInt(star.dataset.star);
+    document.querySelectorAll('.star-btn').forEach(s => {
+      s.classList.toggle('active', parseInt(s.dataset.star) <= n);
+    });
+  });
+});
+
+document.getElementById('save-star-btn').addEventListener('click', () => {
+  const rating = document.querySelectorAll('.star-btn.active').length;
+  const bean = beans.find(b => b.id === pendingDetailBeanId);
+  if (bean) { bean.stars = rating; persistBeans(); }
+  document.getElementById('bean-detail-overlay').classList.remove('open');
+  renderBeans();
+});
+
+document.getElementById('delete-bean-btn').addEventListener('click', () => {
+  beans = beans.filter(b => b.id !== pendingDetailBeanId);
+  persistBeans();
+  document.getElementById('bean-detail-overlay').classList.remove('open');
+  if (selectedBeanId === pendingDetailBeanId && beans.length > 0) {
+    selectedBeanId = beans[0].id;
+    saveData('espresso_selected_bean', selectedBeanId);
+    const b = beans[0];
+    document.getElementById('selected-bean-name').textContent = b.name;
+    document.getElementById('selected-bean-sub').textContent = b.sub;
+  }
+  renderBeans();
+});
+
+document.getElementById('bean-detail-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('bean-detail-overlay')) document.getElementById('bean-detail-overlay').classList.remove('open');
+});
+
+// ══════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════
+function openSettings() {
+  // Load current values into UI
+  document.getElementById('setting-machine').value = settings.machine || '';
+  const atToggle = document.getElementById('setting-autotimer');
+  atToggle.classList.toggle('off', !settings.autoTimer);
+  const cleanToggle = document.getElementById('setting-cleaning-active');
+  cleanToggle.classList.toggle('off', !settings.cleaningActive);
+  document.getElementById('cleaning-val').textContent = settings.cleaningEvery;
+  document.getElementById('setting-default-dosis').value = settings.defaultDosis;
+  document.getElementById('setting-default-zeit').value = settings.defaultZeit;
+  document.getElementById('setting-default-espresso').value = settings.defaultEspresso;
+  // Ampel
+  const a = settings.ampel;
+  document.getElementById('amp-ratio-g-min').value = a.ratioGMin;
+  document.getElementById('amp-ratio-g-max').value = a.ratioGMax;
+  document.getElementById('amp-zeit-g-min').value = a.zeitGMin;
+  document.getElementById('amp-zeit-g-max').value = a.zeitGMax;
+  document.getElementById('amp-ratio-y-min').value = a.ratioYMin;
+  document.getElementById('amp-ratio-y-max').value = a.ratioYMax;
+  document.getElementById('amp-zeit-y-min').value = a.zeitYMin;
+  document.getElementById('amp-zeit-y-max').value = a.zeitYMax;
+  // Unit
+  document.getElementById('unit-g-btn').classList.toggle('active', settings.unit !== 'ml');
+  document.getElementById('unit-ml-btn').classList.toggle('active', settings.unit === 'ml');
+  updateCleaningCounter();
+  document.getElementById('settings-overlay').classList.add('open');
+}
+
+function updateCleaningCounter() {
+  const sub = document.getElementById('cleaning-counter-sub');
+  if (settings.cleaningActive) {
+    sub.textContent = `${settings.cleaningCounter} von ${settings.cleaningEvery} Bezügen`;
+  } else {
+    sub.textContent = 'Erinnerung deaktiviert';
+  }
+}
+
+document.getElementById('settings-btn').addEventListener('click', openSettings);
+document.getElementById('settings-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('settings-overlay')) {
+    saveSettingsFromUI();
+    document.getElementById('settings-overlay').classList.remove('open');
+  }
+});
+
+function saveSettingsFromUI() {
+  settings.machine = document.getElementById('setting-machine').value;
+  settings.autoTimer = !document.getElementById('setting-autotimer').classList.contains('off');
+  settings.cleaningActive = !document.getElementById('setting-cleaning-active').classList.contains('off');
+  settings.defaultDosis = parseFloat(document.getElementById('setting-default-dosis').value) || 18;
+  settings.defaultZeit = parseFloat(document.getElementById('setting-default-zeit').value) || 28;
+  settings.defaultEspresso = parseFloat(document.getElementById('setting-default-espresso').value) || 36;
+  persistSettings();
+  // Update timer badge
+  document.getElementById('timer-mode-badge').textContent = settings.autoTimer ? 'AUTO' : 'MANUELL';
+  document.getElementById('timer-mode-badge').className = 'auto-badge ' + (settings.autoTimer ? 'auto' : 'manual');
+  if (settings.autoTimer) initAutoTimer(); else stopAutoTimer();
+}
+
+// Settings toggles
+document.getElementById('setting-autotimer').addEventListener('click', function() { this.classList.toggle('off'); });
+document.getElementById('setting-cleaning-active').addEventListener('click', function() { this.classList.toggle('off'); });
+
+// Cleaning stepper
+document.getElementById('cleaning-minus').addEventListener('click', () => {
+  settings.cleaningEvery = Math.max(1, settings.cleaningEvery - 5);
+  document.getElementById('cleaning-val').textContent = settings.cleaningEvery;
+  persistSettings(); updateCleaningCounter();
+});
+document.getElementById('cleaning-plus').addEventListener('click', () => {
+  settings.cleaningEvery = settings.cleaningEvery + 5;
+  document.getElementById('cleaning-val').textContent = settings.cleaningEvery;
+  persistSettings(); updateCleaningCounter();
+});
+
+// Ampel save
+document.getElementById('save-ampel-btn').addEventListener('click', () => {
+  settings.ampel = {
+    ratioGMin: parseFloat(document.getElementById('amp-ratio-g-min').value),
+    ratioGMax: parseFloat(document.getElementById('amp-ratio-g-max').value),
+    zeitGMin: parseFloat(document.getElementById('amp-zeit-g-min').value),
+    zeitGMax: parseFloat(document.getElementById('amp-zeit-g-max').value),
+    ratioYMin: parseFloat(document.getElementById('amp-ratio-y-min').value),
+    ratioYMax: parseFloat(document.getElementById('amp-ratio-y-max').value),
+    zeitYMin: parseFloat(document.getElementById('amp-zeit-y-min').value),
+    zeitYMax: parseFloat(document.getElementById('amp-zeit-y-max').value),
+  };
+  persistSettings();
+  document.getElementById('save-ampel-btn').textContent = '✓ Gespeichert';
+  setTimeout(() => { document.getElementById('save-ampel-btn').textContent = 'Grenzen speichern'; }, 1500);
+});
+
+// Unit toggle
+document.getElementById('unit-g-btn').addEventListener('click', () => {
+  settings.unit = 'g';
+  document.getElementById('unit-g-btn').classList.add('active');
+  document.getElementById('unit-ml-btn').classList.remove('active');
+  document.getElementById('setting-unit-label').textContent = 'g';
+  persistSettings();
+});
+document.getElementById('unit-ml-btn').addEventListener('click', () => {
+  settings.unit = 'ml';
+  document.getElementById('unit-ml-btn').classList.add('active');
+  document.getElementById('unit-g-btn').classList.remove('active');
+  document.getElementById('setting-unit-label').textContent = 'ml';
+  persistSettings();
+});
+
+// CSV Export
+document.getElementById('export-csv-btn').addEventListener('click', () => {
+  if (shots.length === 0) { alert('Keine Shots zum Exportieren.'); return; }
+  const header = 'Datum,Uhrzeit,Bohne,Typ,Siebtraeger,Dosis_g,Espresso_g,Ratio,Zeit_s,Puck,Notiz,Ampel\n';
+  const rows = shots.map(s => {
+    const cls = getAmpel(s.ratio, s.zeit||27);
+    return [
+      fmtDate(s.date), fmtTime(s.date), s.bean, s.type, s.basket,
+      s.dosis, s.espresso, s.ratio, s.zeit||'', s.puck?'Ja':'Nein',
+      (s.note||'').replace(/,/g,' '), cls
+    ].join(',');
+  }).join('\n');
+  const blob = new Blob([header+rows], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'espresso-shots.csv'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ══════════════════════════════════════════════
+// AUTO TIMER (Microphone)
+// ══════════════════════════════════════════════
+let audioCtx = null, analyser = null, micStream = null, timerInterval = null;
+let timerRunning = false, timerSeconds = 0;
+
+async function initAutoTimer() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    micStream = stream;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    monitorAudio();
+  } catch(e) {
+    settings.autoTimer = false; persistSettings();
+    document.getElementById('setting-autotimer').classList.add('off');
+    document.getElementById('timer-mode-badge').textContent = 'MANUELL';
+    document.getElementById('timer-mode-badge').className = 'auto-badge manual';
+    alert('Mikrofon-Zugriff verweigert. Auto-Timer deaktiviert.');
+  }
+}
+
+function stopAutoTimer() {
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  timerRunning = false;
+}
+
+let lastPeakTime = 0;
+function monitorAudio() {
+  if (!analyser) return;
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  function check() {
+    if (!analyser) return;
+    analyser.getByteFrequencyData(data);
+    const avg = data.reduce((a,b)=>a+b,0)/data.length;
+    const now = Date.now();
+    if (avg > 60 && (now - lastPeakTime) > 1500) {
+      lastPeakTime = now;
+      if (!timerRunning) {
+        // Start timer
+        timerRunning = true; timerSeconds = 0;
+        const stepperVal = document.querySelector('#durchlauf-stepper .stepper-value');
+        timerInterval = setInterval(() => {
+          timerSeconds++;
+          stepperVal.innerHTML = timerSeconds + '<span class="stepper-unit">s</span>';
+          updateRatio();
+        }, 1000);
+      } else {
+        // Stop timer
+        clearInterval(timerInterval); timerInterval = null; timerRunning = false;
+      }
+    }
+    requestAnimationFrame(check);
+  }
+  check();
+}
+
+// ══════════════════════════════════════════════
+// NAVIGATION EVENTS
+// ══════════════════════════════════════════════
+document.getElementById('to-verlauf-btn').addEventListener('click', () => { renderVerlauf(); showScreen('screen-verlauf'); });
+document.getElementById('back-from-verlauf').addEventListener('click', () => showScreen('screen-log'));
+document.getElementById('to-dashboard-btn').addEventListener('click', () => { buildDashboard(); showScreen('screen-dashboard'); });
+document.getElementById('back-from-dashboard').addEventListener('click', () => showScreen('screen-verlauf'));
+
+// ══════════════════════════════════════════════
+// DATE/TIME
+// ══════════════════════════════════════════════
+function updateDateTime() {
+  const now = new Date();
+  document.getElementById('status-time').textContent = fmtTime(now);
+  document.getElementById('current-date').textContent = `${fmtDate(now)} · ${fmtTime(now)}`;
+}
+setInterval(updateDateTime, 30000);
+
+// KW Label
+document.getElementById('kw-label').textContent = getKW(new Date());
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+function initApp() {
+  updateDateTime();
+
+  // Set default values from settings
+  const dosisEl = document.querySelector('#dosis-stepper');
+  const zeitEl = document.querySelector('#durchlauf-stepper');
+  const espEl = document.querySelector('#espresso-stepper');
+  if (dosisEl) dosisEl.dataset.value = settings.defaultDosis;
+  if (zeitEl) zeitEl.dataset.value = settings.defaultZeit;
+  if (espEl) espEl.dataset.value = settings.defaultEspresso;
+
+  // Re-render stepper values
+  document.querySelectorAll('.stepper').forEach(s => {
+    let val = parseFloat(s.dataset.value);
+    const dec = parseInt(s.dataset.dec);
+    const unit = s.dataset.unit;
+    const el = s.querySelector('.stepper-value');
+    el.innerHTML = (dec > 0 ? val.toFixed(dec) : val) + `<span class="stepper-unit">${unit}</span>`;
+  });
+  updateRatio();
+
+  // Load selected bean
+  const b = beans.find(x => x.id === selectedBeanId) || beans[0];
+  if (b) {
+    document.getElementById('selected-bean-name').textContent = b.name;
+    document.getElementById('selected-bean-sub').textContent = b.sub;
+  }
+
+  // Auto timer badge
+  document.getElementById('timer-mode-badge').textContent = settings.autoTimer ? 'AUTO' : 'MANUELL';
+  document.getElementById('timer-mode-badge').className = 'auto-badge ' + (settings.autoTimer ? 'auto' : 'manual');
+  if (settings.autoTimer) initAutoTimer();
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(e => console.log('SW:', e));
+  }
+}
+</script>
+</body>
+</html>
