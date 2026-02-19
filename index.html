@@ -554,36 +554,6 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
 .defaults-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
 .defaults-toggle .toggle-btn { padding: 7px 0; font-size: 13px; }
 
-/* ── PASSWORT SCREEN ── */
-#screen-auth {
-  background: var(--bg); display: none;
-  align-items: center; justify-content: center;
-  padding: 40px 32px;
-  padding-top: calc(40px + var(--safe-top));
-  padding-bottom: calc(40px + var(--safe-bottom));
-}
-#screen-auth.active { display: flex; flex-direction: column; }
-.auth-logo { font-size: 56px; margin-bottom: 24px; }
-.auth-title { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 32px; color: var(--text-primary); margin-bottom: 6px; }
-.auth-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 32px; }
-.auth-input {
-  width: 100%; padding: 18px; background: var(--card); border: 2px solid var(--border);
-  border-radius: 16px; font-family: 'DM Sans', sans-serif; font-size: 20px;
-  color: var(--text-primary); outline: none; text-align: center;
-  transition: border-color 0.2s; margin-bottom: 14px;
-  -webkit-text-security: disc;
-  letter-spacing: 0.15em;
-  user-select: text; -webkit-user-select: text;
-}
-.auth-input:focus { border-color: var(--accent); }
-.auth-input.error { border-color: var(--red); animation: shake 0.4s ease; }
-.auth-btn {
-  width: 100%; padding: 17px; background: var(--text-primary); color: var(--bg);
-  border: none; border-radius: 16px; font-family: 'DM Sans', sans-serif;
-  font-size: 16px; font-weight: 600; cursor: pointer;
-}
-.auth-error { font-size: 12px; color: var(--red); margin-top: 10px; min-height: 18px; text-align: center; }
-
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 
 /* ── TEAM FEED SCREEN ── */
@@ -640,21 +610,9 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
 <body>
 <div id="app">
 
-  <!-- ══ PASSWORT SCREEN ══ -->
-  <div class="screen active" id="screen-auth">
-    <div class="auth-logo">☕</div>
-    <div class="auth-title">Espresso Tracker</div>
-    <div class="auth-sub">Passwort eingeben</div>
-    <input class="auth-input" type="password" id="auth-password" placeholder="••••••••"
-      autocomplete="current-password"
-      inputmode="text"
-      onkeydown="if(event.key==='Enter')checkPassword()">
-    <button class="auth-btn" type="button" onclick="checkPassword()">Entsperren</button>
-    <div class="auth-error" id="auth-error"></div>
-  </div>
 
   <!-- ══ SCREEN 1: SHOT LOG ══ -->
-  <div class="screen" id="screen-log">
+  <div class="screen active" id="screen-log">
     <div class="top-bar">
       <div class="top-bar-left">
         <button class="icon-btn" id="settings-btn">
@@ -1018,7 +976,6 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <span class="sheet-title-text">Einstellungen</span>
-      <button class="sheet-reset" id="logout-btn" style="color:var(--red);">Sperren</button>
     </div>
     <div class="sheet-body">
 
@@ -1418,38 +1375,6 @@ document.getElementById('back-from-dashboard').addEventListener('click', () => s
 document.getElementById('back-from-team').addEventListener('click', () => showScreen('screen-log'));
 
 // ══════════════════════════════════════════════
-// PASSWORT-SCHUTZ (wie V1, SHA-256)
-// ══════════════════════════════════════════════
-const PW_HASH = 'e3ca6b3b9490b38e5b1e9a0d0e4f8c5d3a2b1c0e9f8d7a6b5c4d3e2f1a0b9c8';
-// Hinweis: Obiger Hash ist Platzhalter — wird beim ersten Start durch echten Hash ersetzt
-
-async function sha256(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
-// Echter Hash von "barista_buersche" — wird einmalig beim Laden berechnet
-let REAL_PW_HASH = '';
-sha256('barista_buersche').then(h => { REAL_PW_HASH = h; });
-
-async function checkPassword() {
-  const pw = (document.getElementById('auth-password').value || '').trim();
-  const errEl = document.getElementById('auth-error');
-  if (!pw) { errEl.textContent = 'Bitte Passwort eingeben.'; return; }
-  const hash = await sha256(pw);
-  if (hash === REAL_PW_HASH) {
-    try { localStorage.setItem('espresso_auth_v2', '1'); } catch(e) {}
-    startApp();
-  } else {
-    errEl.textContent = 'Falsches Passwort.';
-    const inp = document.getElementById('auth-password');
-    inp.classList.add('error');
-    inp.value = '';
-    setTimeout(() => inp.classList.remove('error'), 500);
-  }
-}
-
-// ══════════════════════════════════════════════
 // START APP
 // ══════════════════════════════════════════════
 async function startApp() {
@@ -1474,7 +1399,7 @@ async function startApp() {
 // ══════════════════════════════════════════════
 async function syncFromSupabase() {
   // Sync shots
-  const sr = await sb.select('shots', `user_id=eq.${DEVICE_ID}`);
+  const sr = await sb.select('shots', `device_id=eq.${DEVICE_ID}`);
   if (sr.ok && Array.isArray(sr.data)) {
     const remoteShots = sr.data.map(s => ({
       ...s, date: new Date(s.shot_date),
@@ -1487,7 +1412,7 @@ async function syncFromSupabase() {
   }
 
   // Sync beans
-  const br = await sb.select('beans', `user_id=eq.${DEVICE_ID}`);
+  const br = await sb.select('beans', `device_id=eq.${DEVICE_ID}`);
   if (br.ok && Array.isArray(br.data) && br.data.length > 0) {
     beans = br.data;
     persistBeans();
@@ -1516,7 +1441,7 @@ async function pushShotToSupabase(shot) {
   setSyncStatus('syncing');
   const r = await sb.insert('shots', {
     id: shot.id,
-    user_id: DEVICE_ID,
+    device_id: DEVICE_ID,
     shot_date: shot.date instanceof Date ? shot.date.toISOString() : shot.date,
     bean_name: shot.bean, bean_sub: shot.beanSub || '',
     type: shot.type, basket: shot.basket,
@@ -1530,7 +1455,7 @@ async function pushShotToSupabase(shot) {
 }
 
 async function pushBeanToSupabase(bean) {
-  await sb.upsert('beans', { ...bean, user_id: DEVICE_ID }, 'id');
+  await sb.upsert('beans', { ...bean, device_id: DEVICE_ID }, 'id');
 }
 
 async function pushSettingsToSupabase() {
@@ -1573,12 +1498,12 @@ async function loadTeamFeed() {
   el.innerHTML = r.data.map(s => {
     const cls = getAmpel(s.ratio, s.zeit || 27);
     const d = new Date(s.shot_date);
-    const initials = (s.user_id || '??').slice(0,2).toUpperCase();
+    const initials = (s.device_id || '??').slice(0,2).toUpperCase();
     return `<div class="team-shot-card">
       <div class="team-shot-header">
         <div class="team-user-badge">
           <div class="team-user-avatar">${initials}</div>
-          <div class="team-user-name">Gerät ${s.user_id?.slice(0,6) || '?'}</div>
+          <div class="team-user-name">Gerät ${s.device_id?.slice(0,6) || '?'}</div>
         </div>
         <div class="team-shot-date">${fmtDate(d)}</div>
       </div>
@@ -2164,7 +2089,7 @@ document.getElementById('confirm-new-bean-btn').addEventListener('click', async 
   const grams = activeGram ? parseInt(activeGram.dataset.gram) : 0;
   const newBean = {
     id: crypto.randomUUID(),
-    user_id: DEVICE_ID,
+    device_id: DEVICE_ID,
     name, sub: document.getElementById('new-bean-sub').value.trim() || '',
     emoji: document.getElementById('new-bean-emoji').value.trim() || '🫘',
     stars: 0, total_grams: grams
@@ -2303,14 +2228,6 @@ async function saveSettingsFromUI() {
 
 document.getElementById('settings-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('settings-overlay')) { saveSettingsFromUI(); closeSheet('settings-overlay'); }
-});
-
-document.getElementById('logout-btn').addEventListener('click', () => {
-  try { localStorage.removeItem('espresso_auth_v2'); } catch(e) {}
-  closeSheet('settings-overlay');
-  showScreen('screen-auth');
-  document.getElementById('auth-password').value = '';
-  document.getElementById('auth-error').textContent = '';
 });
 
 document.getElementById('defaults-single-btn').addEventListener('click', () => {
@@ -2580,18 +2497,8 @@ function initApp() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 
-// ══════════════════════════════════════════════
-// AUTO-LOGIN — prüft ob Passwort bereits eingegeben
-// ══════════════════════════════════════════════
-(function autoLogin() {
-  try {
-    if (localStorage.getItem('espresso_auth_v2') === '1') {
-      startApp();
-      return;
-    }
-  } catch(e) {}
-  // Kein gespeicherter Auth — Passwort-Screen zeigen
-})();
+// App direkt starten
+startApp();
 </script>
 </body>
 </html>
